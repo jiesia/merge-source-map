@@ -1,8 +1,9 @@
 [package]
 name = "merge-source-map"
 description = "Merge multiple sourcemaps"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
+repository = "https://github.com/jiesia/merge-source-map"
 license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
