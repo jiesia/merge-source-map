@@ -1,6 +1,6 @@
 # merge-source-map
 
-[English](./README.md) | 中文
+English | [中文](./README-zh_CN.md)
 
 Merge multiple sourcemaps。
 
