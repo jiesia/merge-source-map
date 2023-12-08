@@ -1,7 +1,7 @@
 [package]
 name = "merge-source-map"
 description = "Merge multiple sourcemaps"
-version = "0.1.1"
+version = "1.0.0"
 edition = "2021"
 repository = "https://github.com/jiesia/merge-source-map"
 license = "MIT"

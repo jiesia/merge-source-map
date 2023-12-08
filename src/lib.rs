@@ -1,3 +1,78 @@
+//! Merge multiple sourcemaps.
+//!
+//! # Installation
+//!
+//! ```bash
+//! cargo add sourcemap merge-source-map
+//! ```
+//!
+//! # Usage
+//!
+//! ```rust
+//! use merge_source_map::merge;
+//! use sourcemap::SourceMap;
+//!
+//! fn main() {
+//!     let sourcemap1 = r#"{
+//!         "version": 3,
+//!         "file": "index.js",
+//!         "sourceRoot": "",
+//!         "sources": [
+//!           "index.ts"
+//!         ],
+//!         "names": [],
+//!         "mappings": "AAAA,SAAS,QAAQ,CAAC,IAAY;IAC5B,OAAO,CAAC,GAAG,CAAC,iBAAU,IAAI,CAAE,CAAC,CAAC;AAChC,CAAC",
+//!         "sourcesContent": [
+//!           "function sayHello(name: string) {\n  console.log(`Hello, ${name}`);\n}\n"
+//!         ]
+//!     }"#;
+//!     let sourcemap2 = r#"{
+//!         "version": 3,
+//!         "file": "minify.js",
+//!         "sourceRoot": "",
+//!         "sources": [
+//!           "index.js"
+//!         ],
+//!         "names": [
+//!           "sayHello",
+//!           "name",
+//!           "console",
+//!           "log",
+//!           "concat"
+//!         ],
+//!         "mappings": "AAAA,SAASA,SAASC,CAAI,EAClBC,QAAQC,GAAG,CAAC,UAAUC,MAAM,CAACH,GACjC",
+//!         "sourcesContent": [
+//!           "function sayHello(name) {\n    console.log(\"Hello, \".concat(name));\n}\n"
+//!         ]
+//!     }"#;
+//!
+//!     // merge sourcemap
+//!     let merged = merge(vec![
+//!         SourceMap::from_reader(sourcemap1.as_bytes()).unwrap(),
+//!         SourceMap::from_reader(sourcemap2.as_bytes()).unwrap(),
+//!     ]);
+//!
+//!     let mut buf = vec![];
+//!     merged.to_writer(&mut buf).unwrap();
+//!     let merged = String::from_utf8(buf).unwrap();
+//! }
+//! ```
+//! Merged sourcemap:
+//! ```json
+//! {
+//!   "version": 3,
+//!   "sources": [
+//!     "index.ts"
+//!   ],
+//!   "sourcesContent": [
+//!     "function sayHello(name: string) {\n  console.log(`Hello, ${name}`);\n}\n"
+//!   ],
+//!   "names": [],
+//!   "mappings": "AAAA,SAAS,SAAS,CAAY,EAC5B,QAAQ,GAAG,CAAC,UAAA,MAAA,CAAU,GACxB"
+//! }
+//! ```
+//!
+//! You can view result [here](https://evanw.github.io/source-map-visualization/#NTQAZnVuY3Rpb24gc2F5SGVsbG8obyl7Y29uc29sZS5sb2coIkhlbGxvLCAiLmNvbmNhdChvKSl9MjU0AHsKICAidmVyc2lvbiI6IDMsCiAgInNvdXJjZXMiOiBbCiAgICAiaW5kZXgudHMiCiAgXSwKICAic291cmNlc0NvbnRlbnQiOiBbCiAgICAiZnVuY3Rpb24gc2F5SGVsbG8obmFtZTogc3RyaW5nKSB7XG4gIGNvbnNvbGUubG9nKGBIZWxsbywgJHtuYW1lfWApO1xufVxuIgogIF0sCiAgIm5hbWVzIjogW10sCiAgIm1hcHBpbmdzIjogIkFBQUEsU0FBUyxTQUFTLENBQVksRUFDNUIsUUFBUSxHQUFHLENBQUMsVUFBQSxNQUFBLENBQVUsR0FDeEIiCn0K).
 use sourcemap::{SourceMap, SourceMapBuilder};
 
 pub fn merge(mut maps: Vec<SourceMap>) -> SourceMap {
@@ -68,36 +143,47 @@ mod test {
 
     #[test]
     fn test_merge() {
-        let less2css_sourcemap = r#"{
+        let sourcemap1 = r#"{
             "version": 3,
+            "file": "index.js",
+            "sourceRoot": "",
             "sources": [
-              "input"
+              "index.ts"
             ],
             "names": [],
-            "mappings": "AAAA;EACE,UAAA;;AADF,EAGE;EACE,WAAA",
+            "mappings": "AAAA,SAAS,QAAQ,CAAC,IAAY;IAC5B,OAAO,CAAC,GAAG,CAAC,iBAAU,IAAI,CAAE,CAAC,CAAC;AAChC,CAAC",
             "sourcesContent": [
-              "h1 {\n  color: red;\n\n  .blue {\n    color: blue;\n  }\n}\n"
+              "function sayHello(name: string) {\n  console.log(`Hello, ${name}`);\n}\n"
             ]
         }"#;
-        let css_minify_sourcemap = r#"{
+        let sourcemap2 = r#"{
             "version": 3,
+            "file": "minify.js",
+            "sourceRoot": "",
             "sources": [
-              "src/index.less"
+              "index.js"
             ],
+            "names": [
+              "sayHello",
+              "name",
+              "console",
+              "log",
+              "concat"
+            ],
+            "mappings": "AAAA,SAASA,SAASC,CAAI,EAClBC,QAAQC,GAAG,CAAC,UAAUC,MAAM,CAACH,GACjC",
             "sourcesContent": [
-              "h1 {\n  color: red;\n}\nh1 .blue {\n  color: blue;\n}\n/*# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi9Vc2Vycy9qZXNzL0NvZGUvUnVzdC9tYWtvLWRlbW8vc3JjL2luZGV4Lmxlc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRSxVQUFBOztBQURGLEVBR0U7RUFDRSxXQUFBIn0= */"
-            ],
-            "names": [],
-            "mappings": "AAAA,EAAE,AAAC,CAAC,AACF,KAAK,CAAE,GAAG,AACZ,CAAC,AACD,EAAE,CAAC,CAAC,IAAI,AAAC,CAAC,AACR,KAAK,CAAE,IAAI,AACb,CAAC"
+              "function sayHello(name) {\n    console.log(\"Hello, \".concat(name));\n}\n"
+            ]
         }"#;
 
         let merged = merge(vec![
-            SourceMap::from_reader(less2css_sourcemap.as_bytes()).unwrap(),
-            SourceMap::from_reader(css_minify_sourcemap.as_bytes()).unwrap(),
+            SourceMap::from_reader(sourcemap1.as_bytes()).unwrap(),
+            SourceMap::from_reader(sourcemap2.as_bytes()).unwrap(),
         ]);
         let mut buf = vec![];
         merged.to_writer(&mut buf).unwrap();
         let merged = String::from_utf8(buf).unwrap();
-        assert!(merged.eq(r#"{"version":3,"sources":["input"],"sourcesContent":["h1 {\n  color: red;\n\n  .blue {\n    color: blue;\n  }\n}\n"],"names":[],"mappings":"AAAA,EAAA,CAAA,AACE,KAAA,CAAA,GAAA,CAAA,AADF,EAGE,CAAA,CAAA,IAAA,CAAA,AACE,KAAA,CAAA,IAAA,CAAA"}"#));
+
+        assert!(merged.eq(r#"{"version":3,"sources":["index.ts"],"sourcesContent":["function sayHello(name: string) {\n  console.log(`Hello, ${name}`);\n}\n"],"names":[],"mappings":"AAAA,SAAS,SAAS,CAAY,EAC5B,QAAQ,GAAG,CAAC,UAAA,MAAA,CAAU,GACxB"}"#));
     }
 }
