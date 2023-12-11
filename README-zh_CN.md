@@ -121,10 +121,13 @@ fn main() {
     }"#;
 
     // merge sourcemap
-    let merged = merge(vec![
-        SourceMap::from_reader(sourcemap1.as_bytes()).unwrap(),
-        SourceMap::from_reader(sourcemap2.as_bytes()).unwrap(),
-    ]);
+    let merged = merge(
+        vec![
+            SourceMap::from_reader(sourcemap1.as_bytes()).unwrap(),
+            SourceMap::from_reader(sourcemap2.as_bytes()).unwrap(),
+        ],
+        Default::default(),
+    );
     let mut buf = vec![];
     merged.to_writer(&mut buf).unwrap();
     let merged = String::from_utf8(buf).unwrap();

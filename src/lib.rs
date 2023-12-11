@@ -47,10 +47,13 @@
 //!     }"#;
 //!
 //!     // merge sourcemap
-//!     let merged = merge(vec![
-//!         SourceMap::from_reader(sourcemap1.as_bytes()).unwrap(),
-//!         SourceMap::from_reader(sourcemap2.as_bytes()).unwrap(),
-//!     ]);
+//!     let merged = merge(
+//!         vec![
+//!             SourceMap::from_reader(sourcemap1.as_bytes()).unwrap(),
+//!             SourceMap::from_reader(sourcemap2.as_bytes()).unwrap(),
+//!         ],
+//!         Default::default(),
+//!     );
 //!
 //!     let mut buf = vec![];
 //!     merged.to_writer(&mut buf).unwrap();
@@ -75,7 +78,21 @@
 //! You can view result [here](https://evanw.github.io/source-map-visualization/#NTQAZnVuY3Rpb24gc2F5SGVsbG8obyl7Y29uc29sZS5sb2coIkhlbGxvLCAiLmNvbmNhdChvKSl9MjU0AHsKICAidmVyc2lvbiI6IDMsCiAgInNvdXJjZXMiOiBbCiAgICAiaW5kZXgudHMiCiAgXSwKICAic291cmNlc0NvbnRlbnQiOiBbCiAgICAiZnVuY3Rpb24gc2F5SGVsbG8obmFtZTogc3RyaW5nKSB7XG4gIGNvbnNvbGUubG9nKGBIZWxsbywgJHtuYW1lfWApO1xufVxuIgogIF0sCiAgIm5hbWVzIjogW10sCiAgIm1hcHBpbmdzIjogIkFBQUEsU0FBUyxTQUFTLENBQVksRUFDNUIsUUFBUSxHQUFHLENBQUMsVUFBQSxNQUFBLENBQVUsR0FDeEIiCn0K).
 use sourcemap::{SourceMap, SourceMapBuilder};
 
-pub fn merge(mut maps: Vec<SourceMap>) -> SourceMap {
+pub use sourcemap;
+
+pub struct MergeOptions {
+    pub source_replacer: Option<Box<dyn Fn(&str) -> &str>>,
+}
+
+impl Default for MergeOptions {
+    fn default() -> Self {
+        Self {
+            source_replacer: None,
+        }
+    }
+}
+
+pub fn merge(mut maps: Vec<SourceMap>, options: MergeOptions) -> SourceMap {
     let mut builder = SourceMapBuilder::new(None);
 
     maps = maps
@@ -110,13 +127,24 @@ pub fn merge(mut maps: Vec<SourceMap>) -> SourceMap {
             continue;
         }
 
+        // replace source
+        let replaced_source = if let Some(src) = last_map_token.get_source() {
+            if let Some(source_replacer) = &options.source_replacer {
+                Some(source_replacer(src))
+            } else {
+                Some(src)
+            }
+        } else {
+            None
+        };
+
         // add mapping
         let added_token = builder.add(
             token.get_dst_line(),
             token.get_dst_col(),
             last_map_token.get_src_line(),
             last_map_token.get_src_col(),
-            last_map_token.get_source(),
+            replaced_source,
             last_map_token.get_name(),
         );
 
@@ -176,10 +204,13 @@ mod test {
             ]
         }"#;
 
-        let merged = merge(vec![
-            SourceMap::from_reader(sourcemap1.as_bytes()).unwrap(),
-            SourceMap::from_reader(sourcemap2.as_bytes()).unwrap(),
-        ]);
+        let merged = merge(
+            vec![
+                SourceMap::from_reader(sourcemap1.as_bytes()).unwrap(),
+                SourceMap::from_reader(sourcemap2.as_bytes()).unwrap(),
+            ],
+            Default::default(),
+        );
         let mut buf = vec![];
         merged.to_writer(&mut buf).unwrap();
         let merged = String::from_utf8(buf).unwrap();
