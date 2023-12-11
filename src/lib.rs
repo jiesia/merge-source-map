@@ -81,7 +81,7 @@ use sourcemap::{SourceMap, SourceMapBuilder};
 pub use sourcemap;
 
 pub struct MergeOptions {
-    pub source_replacer: Option<Box<dyn Fn(&str) -> &str>>,
+    pub source_replacer: Option<Box<dyn Fn(&str) -> String>>,
 }
 
 impl Default for MergeOptions {
@@ -132,7 +132,7 @@ pub fn merge(mut maps: Vec<SourceMap>, options: MergeOptions) -> SourceMap {
             if let Some(source_replacer) = &options.source_replacer {
                 Some(source_replacer(src))
             } else {
-                Some(src)
+                Some(src.to_string())
             }
         } else {
             None
@@ -144,7 +144,7 @@ pub fn merge(mut maps: Vec<SourceMap>, options: MergeOptions) -> SourceMap {
             token.get_dst_col(),
             last_map_token.get_src_line(),
             last_map_token.get_src_col(),
-            replaced_source,
+            replaced_source.as_deref(),
             last_map_token.get_name(),
         );
 
